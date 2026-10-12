@@ -234,7 +234,7 @@ mkdir <USERNAME>
 ## Open on Demand
 
 - Open on Demand (OOD) is a web-based interface for accessing the SWC HPC cluster
-- See the [SWC OOD guide][https://liveuclac.sharepoint.com/sites/SSC/SitePages/Open-On-Demand-web-portal-&-Interactive-Applications.aspx]
+- See the [SWC OOD guide](https://liveuclac.sharepoint.com/sites/SSC/SitePages/Open-On-Demand-web-portal-&-Interactive-Applications.aspx)
 - Demo!
 
 
