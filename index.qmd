@@ -659,33 +659,14 @@ Let's look at a real-world example. Learning goals:
 
 ## Pose estimation {.smaller}
 
-![](img/pose_estimation_2D.png){fig-align="center"}
+![Source: [Quantifying behavior to understand the brain](https://www.nature.com/articles/s41593-020-00734-z)](img/pose_estimation_2D.png){fig-align="center"}
 
 
 ::: aside
-Source: [Quantifying behavior to understand the brain](https://www.nature.com/articles/s41593-020-00734-z)
-:::
-
-## Pose estimation software {.smaller}
-
-:::: {.columns}
-
-:::{.column width="50%"}
-[DeepLabCut](http://www.mackenziemathislab.org/deeplabcut): *transfer learning*
-:::
-
-::: {.column width="50%"}
-[SLEAP](https://sleap.ai/):*smaller networks*
-:::
-::::
-
-![source: [sleap.ai](https://sleap.ai/)](img/sleap_movie.gif){fig-align="center" height="400px" style="text-align: center"}
-
-::: aside
-Many others: 
+Lots of open-source software is available, including:
+[DeepLabCut](http://www.mackenziemathislab.org/deeplabcut),
+[SLEAP](https://sleap.ai/),
 [LightningPose](https://github.com/danbider/lightning-pose),
-[DeepPoseKit](https://github.com/jgraving/DeepPoseKit),
-[Anipose](https://anipose.readthedocs.io/en/latest/),
 ...
 :::
 
@@ -695,15 +676,18 @@ Many others:
 
 ## SLEAP workflow {.smaller}
 
-![Source: [animals-in-motion.neuroinformatics.dev](https://animals-in-motion.neuroinformatics.dev/latest/03-sleap-tutorial.html)](img/diagrams/pose-estimation.png){fig-align=center height=240px}
+![](img/diagrams/pose-estimation.png){fig-align=center height=240px}
 
 
 :::: {.fragment}
 
-::: {.callout-warning}
-This workshop uses **SLEAP version 1.3.4** (TensorFlow backend), with documentation available at [legacy.sleap.ai](https://legacy.sleap.ai/).
+::: {.callout-tip}
+## More details
 
-HPC modules for [SLEAP ≥ 1.5.0](https://docs.sleap.ai/) (PyTorch backend) will be added in future.
+We maintain the following resources for SLEAP users:
+
+- [Pose estimation with SLEAP](https://animals-in-motion.neuroinformatics.dev/latest/03-sleap-tutorial.html)
+- [Use SLEAP on the SWC HPC cluster](https://neuroinformatics.dev/howto/data_analysis/HPC-module-SLEAP.html)
 :::
 
 ::::
@@ -744,13 +728,13 @@ ls -1
 ```
 
 ::: {.fragment}
-```{.bash code-line-numbers=false}
-centroid.json                                # Model configuration
-inference-script.sh                          # Bash script to run inference
-jobs.yaml                                    # Summary of all jobs
-mouse044_task1_annotator1.train.pkg.pkg.slp  # Copy of labeled frames
-multi_class_topdown.json                     # Model configuration
-train-script.sh                              # Bash script to run training
+```
+centroid.json                                
+inference-script.sh                          
+jobs.yaml                                    
+mouse044_task1_annotator1.train.pkg.pkg.slp 
+multi_class_topdown.json                     
+train-script.sh                             
 ```
 :::
 
@@ -770,24 +754,22 @@ Training
 cat train-script.sh
 ```
 
-```{.bash code-line-numbers=false}
+```
 #!/bin/bash
 sleap-train centroid.json mouse044_task1_annotator1.train.pkg.pkg.slp
 sleap-train multi_class_topdown.json mouse044_task1_annotator1.train.pkg.pkg.slp
 ```
 
-
-::: {.fragment}
+:::{.fragment}
 Inference
 ```{.bash code-line-numbers="false"}
 cat inference-script.sh
 ```
 
-```{.bash code-line-numbers=false}
+```
 #!/bin/bash
 ```
 :::
-
 
 ## Get SLURM to run the script {.smaller}
 ::: {.panel-tabset}
@@ -803,7 +785,7 @@ Suitable for debugging (immediate feedback)
   ```{.bash code-line-numbers=false}
   module load SLEAP
   cd /ceph/scratch/$USER/mouse044_task1_annotator1.training_job
-  bash train-script.sh
+  ./train-script.sh
 
   # Stop the session
   exit
@@ -826,7 +808,7 @@ Main method for submitting jobs
 ## See example batch scripts
 
 ```{.bash code-line-numbers="false"}
-cd ~/course-behaviour-hpc/pose-estimation/slurm-scripts
+cd /ceph/scratch/$USER/course-linux-hpc/pose-estimation/slurm-scripts
 ls
 ```
 
@@ -852,16 +834,17 @@ Save with `Ctrl+O` (followed by `Enter`), exit with `Ctrl+X`
 
 ## Batch script for training {.smaller}
 
-```{.bash filename="sleap_train_slurm.sh" code-line-numbers="1-13|15-16|18-19|21-22|24-29|31-32"}
+```{.bash filename="sleap_train_slurm.sh" code-line-numbers="1-14|16-17|19-20|22-23|25-30|32-33"}
 #!/bin/bash
 
 #SBATCH -J slp_train # job name
 #SBATCH -p gpu # partition (queue)
 #SBATCH -N 1   # number of nodes
-#SBATCH --mem 16G # memory pool for all cores
-#SBATCH -n 4 # number of cores
+#SBATCH --mem 32G # memory pool for all cores
+#SBATCH --ntasks-per-node=1 # one process per node
+#SBATCH --cpus-per-task=8   # CPU cores available to the process
 #SBATCH -t 0-06:00 # time (D-HH:MM)
-#SBATCH --gres gpu:1 # request 1 GPU (of any kind)
+#SBATCH --gres gpu:a100:1 # request 1 GPU of a given type (see dropdown below)
 #SBATCH -o slurm.%x.%N.%j.out # STDOUT
 #SBATCH -e slurm.%x.%N.%j.err # STDERR
 #SBATCH --mail-type=ALL
@@ -888,6 +871,29 @@ cd $SLP_JOB_DIR
 
 ```
 
+## Choosing the right GPU {.smaller}
+
+- `--gres gpu:a100:1` requests 1 GPU of type A100.
+- `--gres gpu:1` requests 1 GPU of any type
+
+. . . 
+
+Inspect available GPU types by listing the nodes in the `gpu` and `gpu_lowp` partitions:
+
+```{.bash code-line-numbers="false"}
+sinfo -p gpu,gpu_lowp -o "%N %G" --noheader
+```
+
+Look for the string between the two colons: that's what you need for `--gres`
+
+. . .
+
+::: {.callout-warning}
+Avoid GPUs with CUDA compute capability below 7.5 (unsupported by PyTorch ≥ 2.5); at the time of writing, only p5000 cards are incompatible.
+
+See the [SWC wiki](https://liveuclac.sharepoint.com/sites/SSC/SitePages/SSC-CPU-and-GPU-Platform-architecture-165449857.aspx) and the [NVIDIA CUDA GPUs page](https://developer.nvidia.com/cuda/gpus) for compute capabilities.
+:::
+
 ## Monitoring the training job {.smaller}
 
 ```{.bash code-line-numbers="false"}
@@ -902,9 +908,10 @@ View the status of your queued/running jobs with `squeue --me`
 
 ```{.bash code-line-numbers="false"}
 squeue --me
-
-JOBID    PARTITION    NAME       USER      ST   TIME  NODES   NODELIST(REASON)
-4232289  gpu          slp_trai   sirmpila  R    0:20      1   gpu-380-18
+```
+```
+JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+3750192       gpu slp_trai   nstest  R       3:47      1 gpu-sr670-20
 ```
 
 ### sacct
@@ -912,7 +919,9 @@ View status of running/completed jobs with `sacct`:
 
 ```{.bash code-line-numbers="false"}
 sacct
+```
 
+```
 JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
 ------------ ---------- ---------- ---------- ---------- ---------- --------
 4232289       slp_train        gpu     swc-ac          4    RUNNING      0:0
@@ -928,68 +937,18 @@ sacct \
   --format=JobID,JobName,Partition,State,Start,Elapsed,MaxRSS
 ```
 
-### View the logs
+### Monitor the logs
 View the contents of standard output and error (the job name, node name and job ID will differ in each case):
 
 ```{.bash code-line-numbers="false"}
-cat slurm.slp_train.gpu-380-18.4232289.out
-cat slurm.slp_train.gpu-380-18.4232289.err
+tail slurm.slp_train.gpu-sr670-20.3750192.out
+tail slurm.slp_train.gpu-sr670-20.3750192.err
 ```
 :::
-
-## View trained models {.smaller}
-While you wait for the training job to finish, you can copy and inspect the trained models from a previous run:
-```{.bash code-line-numbers="1-3|4-5"}
-cd /ceph/scratch/neuroinformatics-dropoff/SLEAP_HPC_test_data/CalMS21/better_model
-cp -R 250806_174722.centroid.n=679 /ceph/scratch/$USER/mouse044_task1_annotator1.training_job/models/
-cp -R 250807_162146.multi_class_topdown.n=679 /ceph/scratch/$USER/mouse044_task1_annotator1.training_job/models/
-cd /ceph/scratch/$USER/mouse044_task1_annotator1.training_job/models
-ls -1
-```
-
-```{.bash code-line-numbers="true"}
-250806_174722.centroid.n=679
-250807_162146.multi_class_topdown.n=679
-```
-
-::: {.fragment}
-What's in the model directory?
-
-```{.bash code-line-numbers="true"}
-cd 250806_174722.centroid.n=679
-ls -1
-```
-
-```{.bash code-line-numbers="1,9"}
-best_model.h5
-initial_config.json
-labels_gt.train.slp
-labels_gt.val.slp
-labels_pr.train.slp
-labels_pr.val.slp
-metrics.train.npz
-metrics.val.npz
-training_config.json
-training_log.csv
-```
-:::
-
-## Evaluate trained models
-![](img/sleap-evaluation.png){fig-align="center" height="500px"}
-
-::: aside
-See also the SLEAP [model evaluation notebook](http://legacy.sleap.ai/notebooks/Model_evaluation.html){preview-link="true"}
-:::
-
 
 ## SLEAP workflow
 
 ![](img/diagrams/pose-estimation.png){fig-align=center height=240px}
-
-::: aside
-Source: [animals-in-motion.neuroinformatics.dev](https://animals-in-motion.neuroinformatics.dev/latest/03-sleap-tutorial.html)
-:::
-
 
 ## Batch script for inference {.smaller}
 

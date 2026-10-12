@@ -3,10 +3,11 @@
 #SBATCH -J slp_train # job name
 #SBATCH -p gpu # partition (queue)
 #SBATCH -N 1   # number of nodes
-#SBATCH --mem 16G # memory pool for all cores
-#SBATCH -n 4 # number of cores
+#SBATCH --mem 32G # memory pool for all cores
+#SBATCH --ntasks-per-node=1 # one process per node
+#SBATCH --cpus-per-task=8   # CPU cores available to the process
 #SBATCH -t 0-06:00 # time (D-HH:MM)
-#SBATCH --gres gpu:1 # request 1 GPU (of any kind)
+#SBATCH --gres gpu:a100:1 # request 1 GPU of a given type (see dropdown below)
 #SBATCH -o slurm.%x.%N.%j.out # STDOUT
 #SBATCH -e slurm.%x.%N.%j.err # STDERR
 #SBATCH --mail-type=ALL
